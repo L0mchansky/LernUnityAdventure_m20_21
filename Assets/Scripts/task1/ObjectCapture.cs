@@ -20,7 +20,6 @@ namespace LernUnityAdventure_m20_21
         public void Interact(Ray ray)
         {
             _ray = ray;
-            //TODO: Поправить логику. Раньше был маусДовн, держать, и Up, теперь один. "Держать"
 
             CaptureByRay();
             MoveCapturedObject();

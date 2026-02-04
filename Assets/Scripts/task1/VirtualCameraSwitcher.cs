@@ -4,38 +4,22 @@ using UnityEngine;
 
 namespace LernUnityAdventure_m20_21
 {
-    public class VirtualCameraSwitcher : MonoBehaviour
+    public class VirtualCameraSwitcher
     {
-        [SerializeField] private List<CinemachineVirtualCamera> _virtualCameras;
-
-        [SerializeField] private KeyCode _previousKey = KeyCode.A;
-        [SerializeField] private KeyCode _nextKey = KeyCode.D;
-
-        private const int ActiveCameraPriority = 10;
+        private List<CinemachineVirtualCamera> _virtualCameras;
 
         private int _currentIndex = 0;
+        private const int ActiveCameraPriority = 10;
 
-        private void Start()
+        public VirtualCameraSwitcher(List<CinemachineVirtualCamera> virtualCameras)
         {
+            _virtualCameras = virtualCameras;
             SetActiveCamera(_currentIndex);
-        }
-
-        private void Update()
-        {
-            if (Input.GetKeyDown(_previousKey))
-            {
-                SwitchToPrevious();
-            }
-
-            if (Input.GetKeyDown(_nextKey))
-            {
-                SwitchToNext();
-            }
         }
 
         private bool HasOnlyOneCamera => _virtualCameras == null || _virtualCameras.Count <= 1;
 
-        private void SwitchToPrevious()
+        public void SwitchToPrevious()
         {
             if (HasOnlyOneCamera)
                 return;
@@ -48,7 +32,7 @@ namespace LernUnityAdventure_m20_21
             SetActiveCamera(_currentIndex);
         }
 
-        private void SwitchToNext()
+        public void SwitchToNext()
         {
             if (HasOnlyOneCamera)
                 return;

@@ -2,40 +2,42 @@ using UnityEngine;
 
 namespace LernUnityAdventure_m20_21
 {
-    public class Explosion : MonoBehaviour
+    public class Explosion : IInteraction
     {
-        [SerializeField] private float _radius = 5f;
-        [SerializeField] private float _force = 50f;
-        [SerializeField] private float _upwardsModifier = 1f;
-        [SerializeField] private LayerMask _layerMask;
+        private float _radius;
+        private float _force;
+        private float _upwardsModifier;
+        private LayerMask _layerMask;
 
-        [SerializeField] private GameObject _explosionEffectPrefab;
+        private GameObject _explosionEffect;
 
-        private const int RightButtonClick = 1;
-        private Camera _camera;
+        private Ray _ray;
 
-        private void Awake()
+        public Explosion(LayerMask layerMask, GameObject explosionEffect, float radius, float force, float upwardsModifier)
         {
-            _camera = Camera.main;
+            _explosionEffect = explosionEffect;
+            _radius = radius;
+            _force = force;
+            _upwardsModifier = upwardsModifier;
+            _layerMask = layerMask;
         }
 
-        private void Update()
+        public void Interact(Ray ray)
         {
-            if (Input.GetMouseButtonDown(RightButtonClick))
-            {
-                Explode();
-            }
+            _ray = ray;
+            Explode();
         }
 
         private void Explode()
         {
-            Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
-
-            if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, _layerMask))
+            if (Physics.Raycast(_ray, out RaycastHit hit, Mathf.Infinity, _layerMask) == false)
                 return;
 
-            if (_explosionEffectPrefab != null)
-                Instantiate(_explosionEffectPrefab, hit.point, Quaternion.identity);
+            if (_explosionEffect != null)
+            {
+                _explosionEffect.transform.position = hit.point;
+                _explosionEffect.SetActive(true);
+            }
 
             Collider[] targets = Physics.OverlapSphere(hit.point, _radius);
 
@@ -45,19 +47,6 @@ namespace LernUnityAdventure_m20_21
                     continue;
 
                 rigidbody.AddExplosionForce(_force, hit.point, _radius, _upwardsModifier, ForceMode.Impulse);
-            }
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            if (!Application.isPlaying) return;
-
-            Gizmos.color = Color.red;
-
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit))
-            {
-                Gizmos.DrawWireSphere(hit.point, _radius);
             }
         }
     }

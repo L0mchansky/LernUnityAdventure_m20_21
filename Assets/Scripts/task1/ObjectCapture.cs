@@ -2,52 +2,35 @@ using UnityEngine;
 
 namespace LernUnityAdventure_m20_21
 {
-    public class ObjectCapture : MonoBehaviour
+    public class ObjectCapture : IInteraction
     {
-        [SerializeField] private LayerMask _layerMask;
-
-        private const int LeftButtonClick = 0;
+        private LayerMask _layerMask;
         private Transform _captureGameobjectTransform;
-        private Camera _camera;
         private Vector3 _captureOffset;
         private float _captureDistance;
-        private const float GizmoRayLength = 100f;
+        private Ray _ray;
 
         private bool IsCapture => _captureGameobjectTransform != null;
 
-        private void Awake()
+        public ObjectCapture(LayerMask layerMask)
         {
-            _camera = Camera.main;
+            _layerMask = layerMask;
         }
 
-        private void Update()
+        public void Interact(Ray ray)
         {
-            if (Input.GetMouseButtonDown(LeftButtonClick) && IsCapture == false)
-                CaptureByRay();
+            _ray = ray;
+            //TODO: Поправить логику. Раньше был маусДовн, держать, и Up, теперь один. "Держать"
 
-            if (Input.GetMouseButton(LeftButtonClick) && IsCapture)
-                MoveCapturedObject();
-
-            if (Input.GetMouseButtonUp(LeftButtonClick))
-                _captureGameobjectTransform = null;
-        }
-
-        private void OnDrawGizmos()
-        {
-            if (Application.isPlaying == false) return;
-
-            Gizmos.color = Color.red;
-
-            Ray cameraRay = GetCameraRay();
-            Vector3 gizmoVector = cameraRay.direction * GizmoRayLength;
-            Gizmos.DrawRay(cameraRay.origin, gizmoVector);
+            CaptureByRay();
+            MoveCapturedObject();
         }
 
         private void MoveCapturedObject()
         {
-            Ray cameraRay = GetCameraRay();
+            if (IsCapture == false) return;
 
-            Vector3 worldPoint = cameraRay.GetPoint(_captureDistance);
+            Vector3 worldPoint = _ray.GetPoint(_captureDistance);
             Vector3 newPosition = worldPoint + _captureOffset;
 
             _captureGameobjectTransform.position = newPosition;
@@ -55,23 +38,20 @@ namespace LernUnityAdventure_m20_21
 
         private void CaptureByRay()
         {
-            Ray cameraRay = GetCameraRay();
-
-            if (Physics.Raycast(cameraRay, out RaycastHit hit, Mathf.Infinity, _layerMask))
+            if (Physics.Raycast(_ray, out RaycastHit hit, Mathf.Infinity, _layerMask))
             {
+                if (hit.transform.Equals(_captureGameobjectTransform)) return;
+
                 _captureGameobjectTransform = hit.transform;
 
                 _captureDistance = hit.distance;
 
                 _captureOffset = _captureGameobjectTransform.position - hit.point;
             }
+            else
+            {
+                _captureGameobjectTransform = null;
+            }
         }
-
-
-        private Ray GetCameraRay()
-        {
-            return _camera.ScreenPointToRay(Input.mousePosition);
-        }
-
     }
 }

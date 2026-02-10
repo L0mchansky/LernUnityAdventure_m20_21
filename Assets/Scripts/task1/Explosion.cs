@@ -2,51 +2,41 @@ using UnityEngine;
 
 namespace LernUnityAdventure_m20_21
 {
-    public class Explosion : IInteraction
+    public class Explosion
     {
         private float _radius;
         private float _force;
-        private float _upwardsModifier;
         private LayerMask _layerMask;
+        private GameObject _explosionEffectPrefab;
 
-        private GameObject _explosionEffect;
-
-        private Ray _ray;
-
-        public Explosion(LayerMask layerMask, GameObject explosionEffect, float radius, float force, float upwardsModifier)
+        public Explosion(LayerMask layerMask, GameObject explosionEffectPrefab, float radius, float force)
         {
-            _explosionEffect = explosionEffect;
+            _explosionEffectPrefab = explosionEffectPrefab;
             _radius = radius;
             _force = force;
-            _upwardsModifier = upwardsModifier;
             _layerMask = layerMask;
         }
 
-        public void Interact(Ray ray)
+        public void Explode(Ray ray)
         {
-            _ray = ray;
-            Explode();
-        }
-
-        private void Explode()
-        {
-            if (Physics.Raycast(_ray, out RaycastHit hit, Mathf.Infinity, _layerMask) == false)
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, _layerMask) == false)
                 return;
 
-            if (_explosionEffect != null)
+            if (_explosionEffectPrefab != null)
             {
-                _explosionEffect.transform.position = hit.point;
-                _explosionEffect.SetActive(true);
+                Game.Instantiate(_explosionEffectPrefab, hit.point, Quaternion.identity);
             }
 
             Collider[] targets = Physics.OverlapSphere(hit.point, _radius);
 
             foreach (Collider target in targets)
             {
-                if (!target.TryGetComponent(out Rigidbody rigidbody))
+                if (target.TryGetComponent(out IExplodable explodable) == false)
                     continue;
 
-                rigidbody.AddExplosionForce(_force, hit.point, _radius, _upwardsModifier, ForceMode.Impulse);
+                Vector3 directionMove = (target.transform.position - hit.point).normalized;
+
+                explodable.OnExplode(_force, directionMove);
             }
         }
     }

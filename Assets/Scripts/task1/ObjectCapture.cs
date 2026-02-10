@@ -2,55 +2,54 @@ using UnityEngine;
 
 namespace LernUnityAdventure_m20_21
 {
-    public class ObjectCapture : IInteraction
+    public class ObjectCapture
     {
         private LayerMask _layerMask;
         private Transform _captureGameobjectTransform;
+        private IGrabble _grabbable;
         private Vector3 _captureOffset;
         private float _captureDistance;
-        private Ray _ray;
 
-        private bool IsCapture => _captureGameobjectTransform != null;
+        private bool IsCapture => _grabbable != null;
 
         public ObjectCapture(LayerMask layerMask)
         {
             _layerMask = layerMask;
         }
 
-        public void Interact(Ray ray)
+        public void CaptureByRay(Ray ray)
         {
-            _ray = ray;
+            if (IsCapture) return;
 
-            CaptureByRay();
-            MoveCapturedObject();
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, _layerMask) == false)
+                return;
+
+            if (hit.transform.gameObject.TryGetComponent(out _grabbable))
+            {
+                _grabbable.OnGrab();
+                _captureGameobjectTransform = hit.transform;
+                _captureDistance = hit.distance;
+                _captureOffset = _captureGameobjectTransform.position - hit.point;
+            }
         }
 
-        private void MoveCapturedObject()
+        public void MoveCapturedObject(Ray ray)
         {
             if (IsCapture == false) return;
 
-            Vector3 worldPoint = _ray.GetPoint(_captureDistance);
+            Vector3 worldPoint = ray.GetPoint(_captureDistance);
             Vector3 newPosition = worldPoint + _captureOffset;
 
             _captureGameobjectTransform.position = newPosition;
         }
 
-        private void CaptureByRay()
+        public void Release()
         {
-            if (Physics.Raycast(_ray, out RaycastHit hit, Mathf.Infinity, _layerMask))
-            {
-                if (hit.transform.Equals(_captureGameobjectTransform)) return;
+            if (IsCapture == false) return;
 
-                _captureGameobjectTransform = hit.transform;
-
-                _captureDistance = hit.distance;
-
-                _captureOffset = _captureGameobjectTransform.position - hit.point;
-            }
-            else
-            {
-                _captureGameobjectTransform = null;
-            }
+            _grabbable.OnRelease();
+            _grabbable = null;
+            _captureGameobjectTransform = null;
         }
     }
 }

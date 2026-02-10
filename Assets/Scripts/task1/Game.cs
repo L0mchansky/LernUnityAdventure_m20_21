@@ -10,57 +10,41 @@ namespace LernUnityAdventure_m20_21
         [SerializeField] private KeyCode _previousKey = KeyCode.A;
         [SerializeField] private KeyCode _nextKey = KeyCode.D;
         [SerializeField] private VirtualCameraSwitcher _cameraSwitcher;
-        [SerializeField] private GameObject _explosionEffect;
+        [SerializeField] private GameObject _explosionEffectPrefab;
 
         [SerializeField] private LayerMask _layerMaskGround;
         [SerializeField] private LayerMask _layerMaskEnv;
 
-        [Header("Explosion Interaction")]
+        [Header("Explosion params")]
         [SerializeField] private float _radius = 5f;
         [SerializeField] private float _force = 50f;
-        [SerializeField] private float _upwardsModifier = 1f;
 
         private Ray _ray;
         private const float GizmoRayLength = 100f;
 
+        private ObjectCapture _objectCapture;
+        private Explosion _explosion;
+
         private const int LeftButtonClick = 0;
         private const int RightButtonClick = 1;
-        private Player _player;
 
         private void Start()
         {
             _cameraSwitcher = new VirtualCameraSwitcher(_virtualCameras);
 
-            ObjectCapture objectCapture = new ObjectCapture(_layerMaskEnv);
-            Explosion explosion = new Explosion(_layerMaskGround, _explosionEffect, _radius, _force, _upwardsModifier);
-
-            _player = new Player(objectCapture, explosion);
+            _objectCapture = new ObjectCapture(_layerMaskEnv);
+            _explosion = new Explosion(_layerMaskGround, _explosionEffectPrefab, _radius, _force);
         }
 
         private void Update()
         {
             _ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-            if (Input.GetKeyDown(_previousKey))
-            {
-                _cameraSwitcher.SwitchToPrevious();
-            }
-
-            if (Input.GetKeyDown(_nextKey))
-            {
-                _cameraSwitcher.SwitchToNext();
-            }
-
-            if (Input.GetMouseButton(LeftButtonClick))
-            {
-                _player.PrimaryInteract(_ray);
-            }
-
-            if (Input.GetMouseButton(RightButtonClick))
-            {
-                _player.SecondaryInteract(_ray);
-            }
+            HandlingCamera();
+            HandlingObjectCapture();
+            HandlingExplosion();
         }
+
         private void OnDrawGizmos()
         {
             Gizmos.color = Color.red;
@@ -71,6 +55,45 @@ namespace LernUnityAdventure_m20_21
             if (Physics.Raycast(_ray, out RaycastHit hit))
             {
                 Gizmos.DrawWireSphere(hit.point, _radius);
+            }
+        }
+
+        private void HandlingCamera()
+        {
+            if (Input.GetKeyDown(_previousKey))
+            {
+                _cameraSwitcher.SwitchToPrevious();
+            }
+
+            if (Input.GetKeyDown(_nextKey))
+            {
+                _cameraSwitcher.SwitchToNext();
+            }
+        }
+
+        private void HandlingObjectCapture()
+        {
+            if (Input.GetMouseButtonDown(LeftButtonClick))
+            {
+                _objectCapture.CaptureByRay(_ray);
+            }
+
+            if (Input.GetMouseButton(LeftButtonClick))
+            {
+                _objectCapture.MoveCapturedObject(_ray);
+            }
+
+            if (Input.GetMouseButtonUp(LeftButtonClick))
+            {
+                _objectCapture.Release();
+            }
+        }
+
+        private void HandlingExplosion()
+        {
+            if (Input.GetMouseButtonUp(RightButtonClick))
+            {
+                _explosion.Explode(_ray);
             }
         }
     }
